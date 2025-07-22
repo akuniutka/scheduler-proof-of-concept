@@ -1,0 +1,21 @@
+services:
+
+  scheduler-database:
+    image: postgres:17.5
+    container_name: scheduler-concept-database
+    ports:
+      - "7654:5432"
+    environment:
+      - POSTGRES_DB=scheduler_db
+      - POSTGRES_USER=test
+      - POSTGRES_PASSWORD=test
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
+    networks:
+      - backend
+
+networks:
+  backend:
