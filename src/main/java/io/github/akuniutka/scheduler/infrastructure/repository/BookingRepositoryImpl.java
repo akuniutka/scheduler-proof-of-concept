@@ -28,6 +28,16 @@ public class BookingRepositoryImpl implements BookingRepository {
             LIMIT 1
             """.stripIndent();
 
+    private static final String CHECK_SLOT_QUERY_NEW = """
+            SELECT * FROM (
+                SELECT *
+                FROM bookings
+                WHERE owner_id = :ownerId AND start_time < :endTime
+                ORDER BY owner_id, start_time DESC
+                LIMIT 1)
+            WHERE end_time > :startTime
+            """.stripIndent();
+
     private final NamedParameterJdbcTemplate jdbc;
     private final RowMapper<Booking> mapper;
 
@@ -52,7 +62,7 @@ public class BookingRepositoryImpl implements BookingRepository {
                 .addValue("startTime", Timestamp.from(startTime))
                 .addValue("endTime", Timestamp.from(endTime));
         try {
-            return Optional.ofNullable(jdbc.queryForObject(CHECK_SLOT_QUERY, params, mapper));
+            return Optional.ofNullable(jdbc.queryForObject(CHECK_SLOT_QUERY_NEW, params, mapper));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
