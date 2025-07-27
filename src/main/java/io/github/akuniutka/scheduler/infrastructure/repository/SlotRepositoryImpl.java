@@ -24,7 +24,6 @@ public class SlotRepositoryImpl implements SlotRepository {
             SELECT * FROM slots
             WHERE event_id = :eventId
             ORDER BY start_time
-            LIMIT 100000
             """.stripIndent();
 
     private final NamedParameterJdbcTemplate jdbc;

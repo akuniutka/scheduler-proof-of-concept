@@ -38,7 +38,6 @@ public class BookingRepositoryImpl implements BookingRepository {
            SELECT * FROM bookings
            WHERE owner_id = :ownerId
            ORDER BY start_time
-           LIMIT 100000
            """.stripIndent();
 
     private final NamedParameterJdbcTemplate jdbc;

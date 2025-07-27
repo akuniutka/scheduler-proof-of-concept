@@ -72,6 +72,7 @@ public class FindFreeSlotsUseCase {
         while (slotIndex < slots.size()) {
             Slot slot = slots.get(slotIndex);
             freeSlots.add(slot);
+            slotIndex++;
         }
         return freeSlots;
     }
