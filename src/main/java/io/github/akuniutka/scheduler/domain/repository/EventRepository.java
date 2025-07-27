@@ -8,5 +8,5 @@ public interface EventRepository {
 
     void insert(Event event);
 
-    Optional<Event> findById(Long id);
+    Optional<Event> findById(long id);
 }

@@ -43,7 +43,7 @@ public class EventRepositoryImpl implements EventRepository {
     }
 
     @Override
-    public Optional<Event> findById(Long id) {
+    public Optional<Event> findById(long id) {
         SqlParameterSource params = new MapSqlParameterSource("id", id);
         try {
             return Optional.ofNullable(jdbc.queryForObject(FIND_BY_ID_QUERY, params, mapper));

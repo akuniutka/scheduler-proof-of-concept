@@ -2,9 +2,9 @@ package io.github.akuniutka.scheduler.domain.model;
 
 import java.time.Instant;
 
-public record Event(
+public record Slot(
         long id,
-        long owner,
+        long eventId,
         Instant startTime,
         Instant endTime
 ) {

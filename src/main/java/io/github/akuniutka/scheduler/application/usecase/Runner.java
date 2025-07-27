@@ -1,11 +1,13 @@
-package io.github.akuniutka.scheduler.application;
+package io.github.akuniutka.scheduler.application.usecase;
 
+import io.github.akuniutka.scheduler.application.service.BookingService;
+import io.github.akuniutka.scheduler.application.service.EventService;
+import io.github.akuniutka.scheduler.application.service.SlotService;
+import io.github.akuniutka.scheduler.application.service.UserService;
 import io.github.akuniutka.scheduler.domain.model.Booking;
 import io.github.akuniutka.scheduler.domain.model.Event;
+import io.github.akuniutka.scheduler.domain.model.Slot;
 import io.github.akuniutka.scheduler.domain.model.User;
-import io.github.akuniutka.scheduler.domain.repository.BookingRepository;
-import io.github.akuniutka.scheduler.domain.repository.EventRepository;
-import io.github.akuniutka.scheduler.domain.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -14,6 +16,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Component
@@ -22,18 +26,21 @@ public class Runner implements ApplicationRunner {
     private static final Logger log = LoggerFactory.getLogger(Runner.class);
     private static final Random RANDOM = new Random();
 
-    private final UserRepository userRepository;
-    private final EventRepository eventRepository;
-    private final BookingRepository bookingRepository;
+    private final UserService userService;
+    private final EventService eventService;
+    private final BookingService bookingService;
+    private final SlotService slotService;
 
     public Runner(
-            UserRepository userRepository,
-            EventRepository eventRepository,
-            BookingRepository bookingRepository
+            UserService userService,
+            EventService eventService,
+            BookingService bookingService,
+            SlotService slotService
     ) {
-        this.userRepository = userRepository;
-        this.eventRepository = eventRepository;
-        this.bookingRepository = bookingRepository;
+        this.userService = userService;
+        this.eventService = eventService;
+        this.bookingService = bookingService;
+        this.slotService = slotService;
     }
 
     @Override
@@ -41,8 +48,8 @@ public class Runner implements ApplicationRunner {
         log.info("Creating users...");
         User user1 = new User(1L);
         User user2 = new User(2L);
-        userRepository.insert(user1);
-        userRepository.insert(user2);
+        userService.insert(user1);
+        userService.insert(user2);
         log.info("Users created");
 
         log.info("Creating events...");
@@ -52,28 +59,35 @@ public class Runner implements ApplicationRunner {
         Event event2 = new Event(2L, user2.id(), startTime, endTime);
         Event event3 = new Event(3L, user1.id(), startTime, endTime);
         Event event4 = new Event(4L, user2.id(), startTime, endTime);
-        eventRepository.insert(event1);
-        eventRepository.insert(event2);
-        eventRepository.insert(event3);
-        eventRepository.insert(event4);
+        eventService.insert(event1);
+        eventService.insert(event2);
+        eventService.insert(event3);
+        eventService.insert(event4);
         log.info("Events created");
 
-        log.info("Creating bookings...");
+        log.info("Creating bookings and slots...");
         endTime = startTime;
-        Booking[] bookings = new Booking[10_000];
         long bookingCount = 0L;
+        long slotsCount = 0L;
         for (int i = 0; i < 400; i++) {
+            List<Booking> bookings = new ArrayList<>(10_000);
+            List<Slot> slots = new ArrayList<>(10_000);
             for (int j = 0; j < 10_000; j++) {
                 startTime = nextStartTime(endTime);
                 endTime = nextEndTime(startTime);
-                bookings[j] = new Booking(i * 10_000L + j + 1L, j % 4 + 1L, j % 2 + 1L, startTime, endTime);
+                Booking booking = new Booking(i * 10_000L + j + 1L, j % 4 + 1L, j % 2 + 1L, startTime, endTime);
+                bookings.add(booking);
+                Slot slot = new Slot(i * 10_000L + j + 1L, 1L, startTime, endTime);
+                slots.add(slot);
             }
-            bookingRepository.insertAll(bookings);
-            bookingCount = bookingCount + 10_000L;
+            bookingService.insertAll(bookings);
+            bookingCount = bookingCount + bookings.size();
             log.info("{} bookings created", bookingCount);
-
+            slotService.insertAll(slots);
+            slotsCount = slotsCount + slots.size();
+            log.info("{} slots created", slotsCount);
         }
-        log.info("Bookings created");
+        log.info("Bookings and slots created");
     }
 
     private Instant nextStartTime(Instant endTime) {

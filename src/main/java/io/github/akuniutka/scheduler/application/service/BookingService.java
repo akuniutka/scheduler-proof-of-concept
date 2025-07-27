@@ -1,4 +1,4 @@
-package io.github.akuniutka.scheduler.domain.repository;
+package io.github.akuniutka.scheduler.application.service;
 
 import io.github.akuniutka.scheduler.domain.model.Booking;
 
@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface BookingRepository {
+public interface BookingService {
 
     void insertAll(Collection<Booking> bookings);
 

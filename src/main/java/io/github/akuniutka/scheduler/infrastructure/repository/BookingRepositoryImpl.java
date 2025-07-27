@@ -2,8 +2,8 @@ package io.github.akuniutka.scheduler.infrastructure.repository;
 
 import io.github.akuniutka.scheduler.domain.model.Booking;
 import io.github.akuniutka.scheduler.domain.repository.BookingRepository;
+import io.github.akuniutka.scheduler.infrastructure.mapper.BookingMapper;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -23,12 +25,6 @@ public class BookingRepositoryImpl implements BookingRepository {
             """.stripIndent();
 
     private static final String CHECK_SLOT_QUERY = """
-            SELECT * FROM bookings
-            WHERE owner_id = :ownerId AND start_time < :endTime AND end_time > :startTime
-            LIMIT 1
-            """.stripIndent();
-
-    private static final String CHECK_SLOT_QUERY_NEW = """
             SELECT * FROM (
                 SELECT *
                 FROM bookings
@@ -38,33 +34,45 @@ public class BookingRepositoryImpl implements BookingRepository {
             WHERE end_time > :startTime
             """.stripIndent();
 
+    private static final String FIND_ALL_BY_OWNER_ID_ORDER_BY_START_TIME_QUERY = """
+           SELECT * FROM bookings
+           WHERE owner_id = :ownerId
+           ORDER BY start_time
+           LIMIT 100000
+           """.stripIndent();
+
     private final NamedParameterJdbcTemplate jdbc;
     private final RowMapper<Booking> mapper;
 
     public BookingRepositoryImpl(NamedParameterJdbcTemplate jdbc) {
         this.jdbc = jdbc;
-        this.mapper = new DataClassRowMapper<>(Booking.class);
+        this.mapper = new BookingMapper();
     }
 
     @Override
-    public void insertAll(Booking[] bookings) {
-        SqlParameterSource[] parameterSources = new SqlParameterSource[bookings.length];
-        for (int i = 0; i < bookings.length; i++) {
-            parameterSources[i] = new ExtendedBeanPropertySqlParameterSource(bookings[i]);
-        }
-        jdbc.batchUpdate(INSERT_QUERY, parameterSources);
+    public void insertAll(Collection<Booking> bookings) {
+        SqlParameterSource[] params = bookings.stream()
+                .map(ExtendedBeanPropertySqlParameterSource::new)
+                .toArray(SqlParameterSource[]::new);
+        jdbc.batchUpdate(INSERT_QUERY, params);
     }
 
     @Override
-    public Optional<Booking> checkSlot(Long ownerId, Instant startTime, Instant endTime) {
+    public Optional<Booking> findAnyByOwnerIdBetweenStartTimeAndEndTime(long ownerId, Instant startTime, Instant endTime) {
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ownerId", ownerId)
                 .addValue("startTime", Timestamp.from(startTime))
                 .addValue("endTime", Timestamp.from(endTime));
         try {
-            return Optional.ofNullable(jdbc.queryForObject(CHECK_SLOT_QUERY_NEW, params, mapper));
+            return Optional.ofNullable(jdbc.queryForObject(CHECK_SLOT_QUERY, params, mapper));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public List<Booking> findAllByOwnerIdOrderByStartTime(long ownerId) {
+        SqlParameterSource params = new MapSqlParameterSource("ownerId", ownerId);
+        return jdbc.query(FIND_ALL_BY_OWNER_ID_ORDER_BY_START_TIME_QUERY, params, mapper);
     }
 }
