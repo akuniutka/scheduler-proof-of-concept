@@ -51,13 +51,14 @@ public class BookingRepositoryImpl implements BookingRepository {
     @Override
     public void insertAll(Collection<Booking> bookings) {
         SqlParameterSource[] params = bookings.stream()
-                .map(ExtendedBeanPropertySqlParameterSource::new)
+                .map(this::toSqlParameterSource)
                 .toArray(SqlParameterSource[]::new);
         jdbc.batchUpdate(INSERT_QUERY, params);
     }
 
     @Override
-    public Optional<Booking> findAnyByOwnerIdBetweenStartTimeAndEndTime(long ownerId, Instant startTime, Instant endTime) {
+    public Optional<Booking> findAnyByOwnerIdBetweenStartTimeAndEndTime(long ownerId, Instant startTime,
+            Instant endTime) {
         SqlParameterSource params = new MapSqlParameterSource()
                 .addValue("ownerId", ownerId)
                 .addValue("startTime", Timestamp.from(startTime))
@@ -73,5 +74,14 @@ public class BookingRepositoryImpl implements BookingRepository {
     public List<Booking> findAllByOwnerIdOrderByStartTime(long ownerId) {
         SqlParameterSource params = new MapSqlParameterSource("ownerId", ownerId);
         return jdbc.query(FIND_ALL_BY_OWNER_ID_ORDER_BY_START_TIME_QUERY, params, mapper);
+    }
+
+    private SqlParameterSource toSqlParameterSource(Booking booking) {
+        return new MapSqlParameterSource()
+                .addValue("id", booking.id())
+                .addValue("eventId", booking.eventId())
+                .addValue("ownerId", booking.ownerId())
+                .addValue("startTime", Timestamp.from(booking.startTime()))
+                .addValue("endTime", Timestamp.from(booking.endTime()));
     }
 }

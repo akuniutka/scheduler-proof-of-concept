@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class SlotRepositoryImpl implements SlotRepository {
     @Override
     public void insertAll(Collection<Slot> slots) {
         SqlParameterSource[] params = slots.stream()
-                .map(ExtendedBeanPropertySqlParameterSource::new)
+                .map(this::toSqlParameterSource)
                 .toArray(SqlParameterSource[]::new);
         jdbc.batchUpdate(INSERT_QUERY, params);
     }
@@ -46,5 +47,13 @@ public class SlotRepositoryImpl implements SlotRepository {
     public List<Slot> findAllByEventIdOrderByStartTime(long eventId) {
         SqlParameterSource params = new MapSqlParameterSource("eventId", eventId);
         return jdbc.query(FIND_ALL_BY_EVENT_ID_ORDER_BY_START_TIME_QUERY, params, mapper);
+    }
+
+    private SqlParameterSource toSqlParameterSource(Slot slot) {
+        return new MapSqlParameterSource()
+                .addValue("id", slot.id())
+                .addValue("eventId", slot.eventId())
+                .addValue("startTime", Timestamp.from(slot.startTime()))
+                .addValue("endTime", Timestamp.from(slot.endTime()));
     }
 }

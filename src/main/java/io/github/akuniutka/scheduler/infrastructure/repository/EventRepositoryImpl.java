@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
 
+import java.sql.Timestamp;
 import java.util.Optional;
 
 @Component
@@ -38,7 +39,7 @@ public class EventRepositoryImpl implements EventRepository {
 
     @Override
     public void insert(Event event) {
-        SqlParameterSource params = new ExtendedBeanPropertySqlParameterSource(event);
+        SqlParameterSource params = toSqlParameterSource(event);
         jdbc.queryForObject(INSERT_QUERY, params, mapper);
     }
 
@@ -50,5 +51,13 @@ public class EventRepositoryImpl implements EventRepository {
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    private SqlParameterSource toSqlParameterSource(Event event) {
+        return new MapSqlParameterSource()
+                .addValue("id", event.id())
+                .addValue("owner", event.owner())
+                .addValue("startTime", Timestamp.from(event.startTime()))
+                .addValue("endTime", Timestamp.from(event.endTime()));
     }
 }

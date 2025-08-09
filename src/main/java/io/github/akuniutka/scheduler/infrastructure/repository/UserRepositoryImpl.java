@@ -4,7 +4,7 @@ import io.github.akuniutka.scheduler.domain.model.User;
 import io.github.akuniutka.scheduler.domain.repository.UserRepository;
 import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,12 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void insert(User user) {
-        SqlParameterSource params = new BeanPropertySqlParameterSource(user);
+        SqlParameterSource params = toSqlParameterSource(user);
         jdbc.queryForObject(INSERT_QUERY, params, mapper);
+    }
+
+    private SqlParameterSource toSqlParameterSource(User user) {
+        return new MapSqlParameterSource()
+                .addValue("id", user.id());
     }
 }
